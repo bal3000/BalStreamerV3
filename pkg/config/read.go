@@ -2,18 +2,15 @@ package config
 
 import (
 	"encoding/json"
+	"io"
 	"log"
-	"os"
 )
 
 // Revisit to implement io reader
-
-func ReadConfig() Configuration {
-	file, _ := os.Open("./config.json")
-	defer file.Close()
+func ReadConfig(r io.Reader) Configuration {
 	log.Println("Loading in config file")
 
-	decoder := json.NewDecoder(file)
+	decoder := json.NewDecoder(r)
 	configuration := Configuration{}
 	err := decoder.Decode(&configuration)
 
