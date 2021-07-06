@@ -17,6 +17,9 @@ import (
 func Handler(l livestream.Service) *mux.Router {
 	r := mux.NewRouter()
 
+	// middleware
+	r.Use(mux.CORSMethodMiddleware(r))
+
 	// all app routes go here
 	s := r.PathPrefix("/api/livestreams").Subrouter()
 	s.HandleFunc("/{sportType}/{fromDate}/{toDate}", getFixtures(l)).Methods(http.MethodGet, http.MethodOptions)
