@@ -1,20 +1,14 @@
-package livestream
+package mocks
 
 import (
-	"fmt"
-	"testing"
+	"context"
 	"time"
 
-	"github.com/bal3000/BalStreamerV3/pkg/config"
+	"github.com/bal3000/BalStreamerV3/pkg/livestream"
 )
 
-var c = config.Configuration{
-	LiveStreamURL: "http://test.com",
-	APIKey:        "1234",
-}
-
-func TestFilterLiveFixtures(t *testing.T) {
-	fixtures := []LiveFixtures{
+var (
+	fixtures = []livestream.LiveFixtures{
 		{
 			StateName:            "running",
 			UtcStart:             time.Now().Add(-10 * time.Minute).Format("2006-01-02T15:04:05"),
@@ -55,10 +49,31 @@ func TestFilterLiveFixtures(t *testing.T) {
 			SourceTypeName:       "Sat-Receiver",
 		},
 	}
+	rtmpLink = "rtmp://cdn.vops.gcp.xeatre.cloud:5222/liveedge-lowlatency-origin-wza-03/src-3905?wUzz3Tsnestarttime=1625602047&wUzz3Tsneendtime=1625616447&wUzz3Tsnehash=oXr3YM5y4FVOHejFbkHian7-X4vF_KIGwmIBaiP4Qdg=&DVR&wowzadvrplayliststart=20210706185000"
+)
 
-	fmt.Println("running game", fixtures[0])
+type MockService struct{}
 
-	expected := []LiveFixtures{
+func (s MockService) GetFixtureCount() int {
+	return len(fixtures)
+}
+
+func (s MockService) GetRMTPLink() string {
+	return rtmpLink
+}
+
+func (s MockService) GetLiveFixtures(ctx context.Context, sportType, fromDate, toDate string, live bool) ([]livestream.LiveFixtures, error) {
+	return fixtures, nil
+}
+
+func (s MockService) GetStreams(ctx context.Context, timerID string) (livestream.Streams, error) {
+	return livestream.Streams{
+		RTMP: rtmpLink,
+	}, nil
+}
+
+func (s MockService) FilterLiveFixtures(fixtures []livestream.LiveFixtures) ([]livestream.LiveFixtures, error) {
+	return []livestream.LiveFixtures{
 		{
 			StateName:            "running",
 			UtcStart:             time.Now().Add(-10 * time.Minute).Format("2006-01-02T15:04:05"),
@@ -72,21 +87,5 @@ func TestFilterLiveFixtures(t *testing.T) {
 			BroadcastNationName:  "Finland",
 			SourceTypeName:       "Sat-Receiver",
 		},
-	}
-
-	s := NewService(c)
-	lf, err := s.FilterLiveFixtures(fixtures)
-	if err != nil {
-		t.Errorf("unexpected error occured: %w", err)
-	}
-
-	if len(lf) != len(expected) {
-		t.Errorf("expected result length of %v got %v", len(expected), len(lf))
-	}
-
-	for i, result := range lf {
-		if result.Title != expected[i].Title {
-			t.Errorf("expected title of %s got %s", expected[i].Title, result.Title)
-		}
-	}
+	}, nil
 }

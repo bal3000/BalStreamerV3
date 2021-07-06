@@ -14,7 +14,7 @@ import (
 
 type Service interface {
 	GetLiveFixtures(ctx context.Context, sportType, fromDate, toDate string, live bool) ([]LiveFixtures, error)
-	CallAPI(ctx context.Context, path string, body interface{}) error
+	GetStreams(ctx context.Context, timerID string) (Streams, error)
 	FilterLiveFixtures(fixtures []LiveFixtures) ([]LiveFixtures, error)
 }
 
@@ -29,7 +29,7 @@ func NewService(c config.Configuration) Service {
 
 func (s service) GetLiveFixtures(ctx context.Context, sportType, fromDate, toDate string, live bool) ([]LiveFixtures, error) {
 	fixtures := &[]LiveFixtures{}
-	err := s.CallAPI(ctx, fmt.Sprintf("%s/%s/%s", sportType, fromDate, toDate), fixtures)
+	err := s.callAPI(ctx, fmt.Sprintf("%s/%s/%s", sportType, fromDate, toDate), fixtures)
 	if err != nil {
 		return nil, errors.StatusErr{
 			StatusCode: 500,
@@ -59,7 +59,54 @@ func (s service) GetLiveFixtures(ctx context.Context, sportType, fromDate, toDat
 	return lf, nil
 }
 
-func (s service) CallAPI(ctx context.Context, path string, body interface{}) error {
+func (s service) GetStreams(ctx context.Context, timerID string) (Streams, error) {
+	streams := &Streams{}
+	err := s.callAPI(ctx, timerID, streams)
+	if err != nil {
+		return Streams{}, errors.StatusErr{
+			StatusCode: 500,
+			Message:    err.Error(),
+		}
+	}
+
+	return *streams, nil
+}
+
+func (s service) FilterLiveFixtures(fixtures []LiveFixtures) ([]LiveFixtures, error) {
+	var liveFixtures = []LiveFixtures{}
+	for _, fixture := range fixtures {
+		if fixture.StateName == "running" {
+			liveFixtures = append(liveFixtures, fixture)
+			continue
+		}
+
+		start, err := parseDate(fixture.UtcStart)
+		if err != nil {
+			return nil, errors.StatusErr{
+				StatusCode: 500,
+				Message:    err.Error(),
+			}
+		}
+
+		end, err := parseDate(fixture.UtcEnd)
+		if err != nil {
+			return nil, errors.StatusErr{
+				StatusCode: 500,
+				Message:    err.Error(),
+			}
+		}
+
+		now := time.Now()
+
+		if (now.Equal(start) || now.After(start)) && now.Before(end) {
+			liveFixtures = append(liveFixtures, fixture)
+		}
+	}
+
+	return liveFixtures, nil
+}
+
+func (s service) callAPI(ctx context.Context, path string, body interface{}) error {
 	url := fmt.Sprintf("%s/%s", s.url, path)
 	client := &http.Client{}
 	tctx, cancel := context.WithTimeout(ctx, 5*time.Second)
@@ -86,33 +133,6 @@ func (s service) CallAPI(ctx context.Context, path string, body interface{}) err
 	}
 
 	return nil
-}
-
-func (s service) FilterLiveFixtures(fixtures []LiveFixtures) ([]LiveFixtures, error) {
-	var liveFixtures = []LiveFixtures{}
-	for _, fixture := range fixtures {
-		start, err := parseDate(fixture.UtcStart)
-		if err != nil {
-			return nil, errors.StatusErr{
-				StatusCode: 500,
-				Message:    err.Error(),
-			}
-		}
-
-		end, err := parseDate(fixture.UtcEnd)
-		if err != nil {
-			return nil, errors.StatusErr{
-				StatusCode: 500,
-				Message:    err.Error(),
-			}
-		}
-
-		if time.Now().After(start) && time.Now().Before(end) {
-			liveFixtures = append(liveFixtures, fixture)
-		}
-	}
-
-	return liveFixtures, nil
 }
 
 func parseDate(date string) (time.Time, error) {

@@ -22,14 +22,14 @@ func Handler(l livestream.Service) *mux.Router {
 
 	// all app routes go here
 	s := r.PathPrefix("/api/livestreams").Subrouter()
-	s.HandleFunc("/{sportType}/{fromDate}/{toDate}", getFixtures(l)).Methods(http.MethodGet, http.MethodOptions)
-	s.HandleFunc("/{sportType}/{fromDate}/{toDate}/inplay", getLiveFixtures(l)).Methods(http.MethodGet, http.MethodOptions)
-	s.HandleFunc("/{timerId}", getStreams(l)).Methods(http.MethodGet, http.MethodOptions)
+	s.HandleFunc("/{sportType}/{fromDate}/{toDate}", GetFixtures(l)).Methods(http.MethodGet, http.MethodOptions)
+	s.HandleFunc("/{sportType}/{fromDate}/{toDate}/inplay", GetLiveFixtures(l)).Methods(http.MethodGet, http.MethodOptions)
+	s.HandleFunc("/{timerId}", GetStreams(l)).Methods(http.MethodGet, http.MethodOptions)
 
 	return r
 }
 
-func getFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
+func GetFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -64,7 +64,7 @@ func getFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func getLiveFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
+func GetLiveFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -99,7 +99,7 @@ func getLiveFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.R
 	}
 }
 
-func getStreams(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
+func GetStreams(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -114,16 +114,19 @@ func getStreams(l livestream.Service) func(w http.ResponseWriter, r *http.Reques
 		vars := mux.Vars(r)
 		timerID := vars["timerId"]
 
-		streams := &livestream.Streams{}
-		err := l.CallAPI(ctx, timerID, streams)
+		streams, err := l.GetStreams(ctx, timerID)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			if errors.Is(err, liveErr.StatusErr{StatusCode: 404}) {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			} else if errors.Is(err, liveErr.StatusErr{StatusCode: 500}) {
+				log.Println(err)
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			}
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(*streams); err != nil {
+		if err := json.NewEncoder(w).Encode(streams); err != nil {
 			log.Printf("Failed to send json back to client, %v", err)
 		}
 	}
