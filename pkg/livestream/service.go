@@ -15,7 +15,7 @@ import (
 type Service interface {
 	GetLiveFixtures(ctx context.Context, sportType, fromDate, toDate string, live bool) ([]LiveFixtures, error)
 	CallAPI(ctx context.Context, path string, body interface{}) error
-	FilterLiveFixtures(ctx context.Context, fixtures []LiveFixtures) ([]LiveFixtures, error)
+	FilterLiveFixtures(fixtures []LiveFixtures) ([]LiveFixtures, error)
 }
 
 type service struct {
@@ -45,7 +45,7 @@ func (s service) GetLiveFixtures(ctx context.Context, sportType, fromDate, toDat
 		return *fixtures, nil
 	}
 
-	lf, err := s.FilterLiveFixtures(ctx, *fixtures)
+	lf, err := s.FilterLiveFixtures(*fixtures)
 	if err != nil {
 		return nil, errors.StatusErr{
 			StatusCode: 500,
@@ -88,7 +88,7 @@ func (s service) CallAPI(ctx context.Context, path string, body interface{}) err
 	return nil
 }
 
-func (s service) FilterLiveFixtures(ctx context.Context, fixtures []LiveFixtures) ([]LiveFixtures, error) {
+func (s service) FilterLiveFixtures(fixtures []LiveFixtures) ([]LiveFixtures, error) {
 	var liveFixtures = []LiveFixtures{}
 	for _, fixture := range fixtures {
 		start, err := parseDate(fixture.UtcStart)
