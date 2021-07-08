@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func TestTransformMessage(t *testing.T) {
+func TestStopTransformMessage(t *testing.T) {
 	s := StopPlayingStreamEvent{
 		ChromeCastToStop: "test 1",
 		StopDateTime:     time.Now(),
