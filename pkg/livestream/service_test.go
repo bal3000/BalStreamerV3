@@ -1,7 +1,6 @@
 package livestream
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -55,8 +54,6 @@ func TestFilterLiveFixtures(t *testing.T) {
 			SourceTypeName:       "Sat-Receiver",
 		},
 	}
-
-	fmt.Println("running game", fixtures[0])
 
 	expected := []LiveFixtures{
 		{
