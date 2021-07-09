@@ -24,6 +24,7 @@ type Service interface {
 	GetFoundChromecasts() ([]string, error)
 	CastStream(ctx context.Context, routingKey string, c StreamToCast) error
 	StopStream(ctx context.Context, routingKey string, c StopPlayingStream) error
+	GetCurrentlyPlayingStream(ctx context.Context) ([]storage.CurrentlyPlaying, error)
 }
 
 type service struct {
@@ -33,7 +34,7 @@ type service struct {
 }
 
 func NewService(e eventbus.RabbitMQ, d storage.ChromecastStore) Service {
-	return &service{eventbus: e, datastore: d}
+	return &service{eventbus: e, datastore: d, chromecasts: make(map[string]bool)}
 }
 
 func (s *service) ListenForChromecasts(routingKey string) error {
@@ -43,7 +44,9 @@ func (s *service) ListenForChromecasts(routingKey string) error {
 	}
 
 	// send all chromecasts from last refresh to page
-	go s.eventbus.SendMessage(routingKey, &events.GetLatestChromecastEvent{MessageType: latestEventType})
+	go func() {
+		s.eventbus.SendMessage(routingKey, &events.GetLatestChromecastEvent{MessageType: latestEventType})
+	}()
 
 	return nil
 }
@@ -116,6 +119,25 @@ func (s *service) StopStream(ctx context.Context, routingKey string, c StopPlayi
 	}
 
 	return nil
+}
+
+func (s *service) GetCurrentlyPlayingStream(ctx context.Context) ([]storage.CurrentlyPlaying, error) {
+	playing, err := s.datastore.GetCurrentlyPlaying(ctx)
+	if err != nil {
+		return nil, errors.StatusErr{
+			StatusCode: 500,
+			Message:    err.Error(),
+		}
+	}
+
+	if len(playing) == 0 {
+		return nil, errors.StatusErr{
+			StatusCode: 404,
+			Message:    "Nothing is currently playing",
+		}
+	}
+
+	return playing, nil
 }
 
 func (s *service) processMsgs(d amqp.Delivery) bool {
