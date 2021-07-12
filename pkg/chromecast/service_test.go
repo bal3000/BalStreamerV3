@@ -1,12 +1,14 @@
 package chromecast
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"testing"
 
 	customErr "github.com/bal3000/BalStreamerV3/pkg/errors"
 	eventMocks "github.com/bal3000/BalStreamerV3/pkg/eventbus/mocks"
+	"github.com/bal3000/BalStreamerV3/pkg/storage"
 	"github.com/bal3000/BalStreamerV3/pkg/storage/mocks"
 	"github.com/streadway/amqp"
 )
@@ -64,5 +66,59 @@ func TestGetFoundChromecasts(t *testing.T) {
 
 	if result[0] != msg.Chromecast {
 		t.Errorf("expected result value to be %s got %s", msg.Chromecast, result[0])
+	}
+}
+
+func TestCastStream(t *testing.T) {
+	c := mocks.MockChromecastMongoStore{}
+	r := eventMocks.MockRabbitMQ{}
+
+	s := NewService(r, c)
+
+	// add mock call logger
+
+	err := s.CastStream(context.Background(), "test", StreamToCast{
+		Chromecast: "test 1",
+		Fixture:    "testy",
+		StreamURL:  "http://test.com",
+	})
+	if err != nil {
+		t.Errorf("unexpected error occured, %v", err)
+	}
+}
+
+func TestGetCurrentlyPlayingStream(t *testing.T) {
+	m := []storage.CurrentlyPlaying{
+		{
+			Chromecast: "test 1",
+			Fixture:    "match 1",
+		},
+		{
+			Chromecast: "test 2",
+			Fixture:    "match 2",
+		},
+	}
+
+	c := mocks.MockChromecastMongoStore{}
+	r := eventMocks.MockRabbitMQ{}
+
+	s := NewService(r, c)
+
+	playing, err := s.GetCurrentlyPlayingStream(context.Background())
+	if err != nil {
+		t.Errorf("unexpected error occured, %v", err)
+	}
+
+	if len(playing) != 2 {
+		t.Errorf("expected playing length to be 2 got %v", len(playing))
+	}
+
+	for i, p := range playing {
+		if p.Chromecast != m[i].Chromecast {
+			t.Errorf("expected Chromecast value at index %d to be %s got %s", i, m[i].Chromecast, p.Chromecast)
+		}
+		if p.Fixture != m[i].Fixture {
+			t.Errorf("expected Fixture value at index %d to be %s got %s", i, m[i].Fixture, p.Fixture)
+		}
 	}
 }
