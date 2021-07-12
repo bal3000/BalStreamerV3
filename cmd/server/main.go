@@ -9,9 +9,12 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/bal3000/BalStreamerV3/pkg/chromecast"
 	"github.com/bal3000/BalStreamerV3/pkg/config"
+	"github.com/bal3000/BalStreamerV3/pkg/eventbus"
 	"github.com/bal3000/BalStreamerV3/pkg/http/rest"
 	"github.com/bal3000/BalStreamerV3/pkg/livestream"
+	"github.com/bal3000/BalStreamerV3/pkg/storage/mongo"
 )
 
 var configuration config.Configuration
@@ -30,11 +33,26 @@ func main() {
 }
 
 func run() error {
+	//setup rabbit
+	rabbit, closer, err := eventbus.NewRabbitMQ(configuration)
+	if err != nil {
+		return err
+	}
+	defer closer()
+
+	// setup chromecast db
+	mongo, dbCloser, err := mongo.NewChromecastMongoStore(context.Background(), configuration.ConnectionString)
+	if err != nil {
+		return err
+	}
+	defer dbCloser()
+
 	// services
 	ls := livestream.NewService(configuration)
+	cs := chromecast.NewService(rabbit, mongo)
 
 	// routes and middleware
-	router := rest.Handler(ls)
+	router := rest.Handler(ls, cs)
 
 	// start the server
 	srv := &http.Server{
