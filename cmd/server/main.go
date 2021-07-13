@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
 	"log"
 	"net/http"
@@ -17,12 +19,13 @@ import (
 	"github.com/bal3000/BalStreamerV3/pkg/storage/mongo"
 )
 
+//go:embed config.json
+var jf []byte
+
 var configuration config.Configuration
 
 func init() {
-	file, _ := os.Open("./config.json")
-	defer file.Close()
-	configuration = config.ReadConfig(file)
+	configuration = config.ReadConfig(bytes.NewBuffer(jf))
 }
 
 func main() {
