@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/bal3000/BalStreamerV3/pkg/chromecast"
 	liveErr "github.com/bal3000/BalStreamerV3/pkg/errors"
+	"github.com/bal3000/BalStreamerV3/pkg/http/middleware"
 	"github.com/bal3000/BalStreamerV3/pkg/livestream"
 
 	"github.com/gorilla/mux"
@@ -24,6 +23,7 @@ func Handler(l livestream.Service, c chromecast.Service) *mux.Router {
 
 	// middleware
 	r.Use(mux.CORSMethodMiddleware(r))
+	r.Use(middleware.DrainAndClose)
 
 	// all app routes go here
 	s := r.PathPrefix("/api/livestreams").Subrouter()
@@ -43,12 +43,6 @@ func Handler(l livestream.Service, c chromecast.Service) *mux.Router {
 
 func GetFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Turn into middleware
-		defer func() {
-			_, _ = io.Copy(ioutil.Discard, r.Body)
-			r.Body.Close()
-		}()
-
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 
