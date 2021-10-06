@@ -88,7 +88,7 @@ func (player *AutoPlayer) checkFixture(ctx context.Context, interval time.Durati
 		case <-timer.C:
 			start, err := time.Parse("2006-01-02", fixture.UtcStart)
 			if err != nil {
-				log.Printf("error occured converting start date: %w", err)
+				log.Printf("error occured converting start date: %v", err)
 				return
 			}
 
