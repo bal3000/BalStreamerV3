@@ -19,7 +19,7 @@ var (
 	lostEventType   = "ChromecastLostEvent"
 )
 
-type Service interface {
+type Chromecaster interface {
 	ListenForChromecasts(routingKey string) error
 	GetFoundChromecasts() ([]string, error)
 	CastStream(ctx context.Context, routingKey string, c StreamToCast) error
@@ -29,11 +29,11 @@ type Service interface {
 
 type service struct {
 	eventbus    eventbus.RabbitMQ
-	datastore   storage.ChromecastStore
+	datastore   storage.ChromecastStorer
 	chromecasts map[string]bool
 }
 
-func NewService(e eventbus.RabbitMQ, d storage.ChromecastStore) Service {
+func NewService(e eventbus.RabbitMQ, d storage.ChromecastStorer) Chromecaster {
 	return &service{eventbus: e, datastore: d, chromecasts: make(map[string]bool)}
 }
 

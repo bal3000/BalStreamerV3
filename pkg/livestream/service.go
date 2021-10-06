@@ -12,7 +12,7 @@ import (
 	"github.com/bal3000/BalStreamerV3/pkg/errors"
 )
 
-type Service interface {
+type LiveStreamer interface {
 	GetLiveFixtures(ctx context.Context, sportType, fromDate, toDate string, live bool) ([]LiveFixtures, error)
 	GetStreams(ctx context.Context, timerID string) (Streams, error)
 	FilterLiveFixtures(fixtures []LiveFixtures) ([]LiveFixtures, error)
@@ -23,7 +23,7 @@ type service struct {
 	apiKey string
 }
 
-func NewService(c config.Configuration) Service {
+func NewService(c config.Configuration) LiveStreamer {
 	return service{url: c.LiveStreamURL, apiKey: c.APIKey}
 }
 

@@ -18,7 +18,7 @@ import (
 
 const routingKey string = "chromecast-key"
 
-func Handler(l livestream.Service, c chromecast.Service) *mux.Router {
+func Handler(l livestream.LiveStreamer, c chromecast.Chromecaster) *mux.Router {
 	r := mux.NewRouter()
 
 	// middleware
@@ -41,7 +41,7 @@ func Handler(l livestream.Service, c chromecast.Service) *mux.Router {
 	return r
 }
 
-func GetFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
+func GetFixtures(l livestream.LiveStreamer) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -76,7 +76,7 @@ func GetFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.Reque
 	}
 }
 
-func GetLiveFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
+func GetLiveFixtures(l livestream.LiveStreamer) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -111,7 +111,7 @@ func GetLiveFixtures(l livestream.Service) func(w http.ResponseWriter, r *http.R
 	}
 }
 
-func GetStreams(l livestream.Service) func(w http.ResponseWriter, r *http.Request) {
+func GetStreams(l livestream.LiveStreamer) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -144,7 +144,7 @@ func GetStreams(l livestream.Service) func(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func GetChromecasts(c chromecast.Service) func(w http.ResponseWriter, r *http.Request) {
+func GetChromecasts(c chromecast.Chromecaster) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -176,7 +176,7 @@ func GetChromecasts(c chromecast.Service) func(w http.ResponseWriter, r *http.Re
 	}
 }
 
-func GetCurrentlyPlayingStream(c chromecast.Service) func(w http.ResponseWriter, r *http.Request) {
+func GetCurrentlyPlayingStream(c chromecast.Chromecaster) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -205,7 +205,7 @@ func GetCurrentlyPlayingStream(c chromecast.Service) func(w http.ResponseWriter,
 }
 
 // CastStream - streams given data to given chromecast
-func CastStream(c chromecast.Service) func(w http.ResponseWriter, r *http.Request) {
+func CastStream(c chromecast.Chromecaster) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -240,7 +240,7 @@ func CastStream(c chromecast.Service) func(w http.ResponseWriter, r *http.Reques
 }
 
 // StopStream endpoint sends the command to stop the stream on the given chromecast
-func StopStream(c chromecast.Service) func(w http.ResponseWriter, r *http.Request) {
+func StopStream(c chromecast.Chromecaster) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("content-type", "application/json")
 		w.Header().Set("Access-Control-Allow-Origin", "*")
